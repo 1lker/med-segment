@@ -2,7 +2,7 @@ import os
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-import cv2  # Added for visualization
+import cv2
 from src.part1_foreground import evaluate_foreground_mask
 from src.part2_locations import evaluate_cell_locations
 from src.part3_boundaries import evaluate_cell_boundaries
@@ -103,11 +103,12 @@ def main():
         print(f"Processing image {i+1}...")
         
         # Test different methods to find the best one for this image
-        methods = ['distance_transform', 'h_maxima', 'intensity_based']
-        min_distances = [10, 15, 20]  # Increased min_distance to avoid overcrowding
+        # Using improved implementation with 'combined_approach' method
+        methods = ['combined_approach', 'boundary_distance', 'intensity_based']
+        min_distances = [6, 8, 10]  # Smaller min_distances to detect more cells
         
-        best_method = 'distance_transform'  # Default method
-        best_min_distance = 15  # Default min_distance
+        best_method = 'combined_approach'  # Default method
+        best_min_distance = 8  # Default min_distance
         best_f1 = 0
         
         for method in methods:
