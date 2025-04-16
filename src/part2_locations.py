@@ -30,7 +30,7 @@ def find_cell_locations(image, foreground_mask, method='distance_transform',
         cell_locations: numpy.ndarray of shape (n, 2) with (x, y) coordinates
         regional_maxima_map: numpy.ndarray of the same size as input mask
     """
-    # Convert image to grayscale
+    # start here, convert image to grayscale
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     
     if method == 'distance_transform':
@@ -43,18 +43,17 @@ def find_cell_locations(image, foreground_mask, method='distance_transform',
         # Use peak_local_max for more stable peak detection
         from skimage.feature import peak_local_max
         
-        # Find peaks with a minimum distance between peaks
-        # Use distance threshold to ignore very small peaks
-        min_distance_value = 3  # Minimum distance value to consider as a valid peak
+        # choose and call peaks with a minimum distance between peaks
+        # threshold for noise clearing
+        min_distance_value = 3  # minimum distance value to consider as a valid peak
         # Removed 'indices' parameter to avoid TypeError
         coordinates = peak_local_max(dist_transform, min_distance=min_distance, 
                                    threshold_abs=min_distance_value,
                                    exclude_border=False)
-        
-        # Convert coordinates to list of (x,y) tuples
+     
         cell_locations = [(int(x), int(y)) for y, x in coordinates]
         
-        # Create a maxima map for visualization
+        # create a maxima map for visualization
         maxima = np.zeros_like(foreground_mask, dtype=bool)
         for y, x in coordinates:
             if 0 <= y < maxima.shape[0] and 0 <= x < maxima.shape[1]:
@@ -87,30 +86,28 @@ def find_cell_locations(image, foreground_mask, method='distance_transform',
                 cell_locations.append((centroid_x, centroid_y))
     
     elif method == 'intensity_based':
-        # For CAMA-1 cells, look for darker centers within bright cell regions
         
-        # Step 1: Apply contrast enhancement
+        # we are implying contrast enhancement
         clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
         enhanced = clahe.apply(gray)
         
-        # Step 2: Mask out background regions
+        # mask out background regions?
         masked_gray = np.zeros_like(enhanced)
         masked_gray[foreground_mask > 0] = enhanced[foreground_mask > 0]
         
-        # Step 3: Apply Gaussian blur to reduce noise
+        # Gaussian blur to reduce noise
         blurred = cv2.GaussianBlur(masked_gray, (5, 5), 0)
         
-        # Step 4: Invert so cell centers (darker) become peaks
+        # invert so cell centers (darker) become peaks idea here
         inverted = 255 - blurred
         
-        # Step 5: Find local maxima
+        # here we find local maxima
         from skimage.feature import peak_local_max
         # Removed 'indices' parameter
         coordinates = peak_local_max(inverted, min_distance=min_distance, 
-                                   threshold_abs=50,  # Minimum intensity to consider
+                                   threshold_abs=50,  # minimum intensity to consider we pick
                                    exclude_border=False)
         
-        # Convert to list of (x, y) tuples
         cell_locations = [(int(x), int(y)) for y, x in coordinates]
         
         # Create maxima map
@@ -138,27 +135,27 @@ def find_cell_locations(image, foreground_mask, method='distance_transform',
         # Estimate typical cell radius
         estimated_radius = np.sqrt(avg_cell_size / np.pi)
         
-        # For each cell location
+
         for x, y in cell_locations:
-            # Make sure it's within the foreground mask
+            # check if  it's within the foreground mask
             if 0 <= y < foreground_mask.shape[0] and 0 <= x < foreground_mask.shape[1]:
                 if foreground_mask[y, x] > 0:
-                    # Check that this point is not too close to an already validated cell
+                    # point is not too close to an already validated cell?
                     too_close = False
                     for vx, vy in validated_locations:
-                        # Calculate distance to other validated cells
+                        # we did calculate distance to other validated cells
                         dist = np.sqrt((x - vx) ** 2 + (y - vy) ** 2)
-                        if dist < estimated_radius * 0.5:  # Use half the radius for stricter filtering
+                        if dist < estimated_radius * 0.5:  # we did use half the radius for stricter filtering
                             too_close = True
                             break
                     
                     if not too_close:
                         validated_locations.append((x, y))
         
-        # Update cell locations and maxima map
+        # here we are making updates
         cell_locations = validated_locations
         
-        # Recreate maxima map
+        # recreate maxima map
         maxima = np.zeros_like(foreground_mask, dtype=bool)
         for x, y in cell_locations:
             if 0 <= y < maxima.shape[0] and 0 <= x < maxima.shape[1]:
@@ -197,12 +194,12 @@ def evaluate_cell_locations(image_path, mask_path, cells_path, output_path,
     dict
         Dictionary with evaluation metrics
     """
-    # Load data
+
     image = cv2.imread(image_path)
     foreground_mask = np.loadtxt(mask_path, dtype=np.int32)
     gold_cells = np.loadtxt(cells_path, dtype=np.int32)
     
-    # Find cell locations
+    # find cell locations
     cell_locations, regional_maxima = find_cell_locations(
         image, foreground_mask, 
         method=method,
@@ -210,16 +207,16 @@ def evaluate_cell_locations(image_path, mask_path, cells_path, output_path,
         validation=validation
     )
     
-    # Save cell locations
+   
     save_result(cell_locations, output_path)
     
-    # Calculate cell-level metrics
-    # A true positive is when a detected cell location corresponds to a gold standard cell
+
+    # A true positive means that a detected cell location corresponds to a gold standard cell
     tp = 0
     for x, y in cell_locations:
-        # Check if coordinates are within gold cells image boundaries
+ 
         if 0 <= y < gold_cells.shape[0] and 0 <= x < gold_cells.shape[1]:
-            # Check if this point corresponds to a foreground cell in gold standard
+            # point corresponds to a foreground cell in gold standard?
             if gold_cells[y, x] > 0:
                 tp += 1
     
@@ -242,18 +239,16 @@ def evaluate_cell_locations(image_path, mask_path, cells_path, output_path,
         'num_detected': len(cell_locations),
         'num_true': num_gold_cells,
         'true_positives': tp
-    }
 
-# This allows running the script directly for testing
 if __name__ == "__main__":
-    # Example usage
+  
     image_path = "data/images/im1.jpg"
     mask_path = "results/part1/im1_mask.txt"
     cells_path = "data/gold_cells/im1_gold_cells.txt"
     output_path = "results/part2/im1_cell_locations.txt"
     vis_path = "results/part2/im1_visualization.png"
     
-    # Test different configurations
+    # Test configs
     methods = ['distance_transform', 'h_maxima', 'intensity_based']
     min_distances = [8, 10, 15]
     
@@ -286,7 +281,7 @@ if __name__ == "__main__":
         best_method, best_min_distance = best_config
         print(f"\nBest configuration: method={best_method}, min_distance={best_min_distance}")
         
-        # Final evaluation with best configuration
+        # Final result is here as the best option we have
         result = evaluate_cell_locations(
             image_path, mask_path, cells_path, output_path, vis_path,
             method=best_method,
