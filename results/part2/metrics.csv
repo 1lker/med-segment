@@ -1,4 +1,4 @@
-Image,Method,Min Distance,Max Detection,Detected Cells,True Cells,True Positives,Precision,Recall,F1 Score
-Image 1,polygon_detection,8,False,0,242,0,0,0,0
-Image 2,polygon_detection,8,False,0,311,0,0,0,0
-Image 3,polygon_detection,8,False,0,509,0,0,0,0
+Image,Method,Min Distance,Detected Cells,True Cells,True Positives,Precision,Recall,F1 Score
+Image 1,intensity_based,10,126,242,123,0.9761904761904762,0.5082644628099173,0.6684782608695653
+Image 2,intensity_based,10,105,311,103,0.9809523809523809,0.3311897106109325,0.4951923076923077
+Image 3,intensity_based,10,490,509,453,0.9244897959183673,0.8899803536345776,0.9069069069069069
