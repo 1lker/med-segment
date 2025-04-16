@@ -1,10 +1,10 @@
 Image,Method,Threshold,Matched Cells,Total Cells,Dice Index,IoU
-Image 1,watershed,0.5,0,0,0,0
-Image 1,watershed,0.75,0,0,0,0
-Image 1,watershed,0.9,0,0,0,0
-Image 2,watershed,0.5,0,0,0,0
-Image 2,watershed,0.75,0,0,0,0
-Image 2,watershed,0.9,0,0,0,0
-Image 3,watershed,0.5,0,0,0,0
-Image 3,watershed,0.75,0,0,0,0
-Image 3,watershed,0.9,0,0,0,0
+Image 1,membrane_based,0.5,159,242,0.7320947767067295,0.5945925273358151
+Image 1,membrane_based,0.75,74,242,0.8547094064002737,0.7504111935826393
+Image 1,membrane_based,0.9,18,242,0.925689545066051,0.8621651119180108
+Image 2,membrane_based,0.5,159,311,0.7696972011086536,0.643100407137219
+Image 2,membrane_based,0.75,90,311,0.8683133249962277,0.7714520673112374
+Image 2,membrane_based,0.9,33,311,0.9258384379999854,0.8622739128615051
+Image 3,watershed,0.5,353,509,0.7676154220414657,0.6394411748401545
+Image 3,watershed,0.75,216,509,0.8547768411081128,0.7504897773404585
+Image 3,watershed,0.9,50,509,0.92798685831932,0.8660667002234642
