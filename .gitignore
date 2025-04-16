@@ -1,0 +1,7 @@
+./hw1_venv
+__pycache__/
+
+/*.pyc
+*.pyo
+
+/hw1_venv

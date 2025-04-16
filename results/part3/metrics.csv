@@ -1,0 +1,10 @@
+Image,Method,Threshold,Matched Cells,Total Cells,Dice Index,IoU
+Image 1,watershed,0.5,0,0,0,0
+Image 1,watershed,0.75,0,0,0,0
+Image 1,watershed,0.9,0,0,0,0
+Image 2,watershed,0.5,0,0,0,0
+Image 2,watershed,0.75,0,0,0,0
+Image 2,watershed,0.9,0,0,0,0
+Image 3,watershed,0.5,0,0,0,0
+Image 3,watershed,0.75,0,0,0,0
+Image 3,watershed,0.9,0,0,0,0
