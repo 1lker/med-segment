@@ -26,23 +26,22 @@ def find_cell_boundaries(image, foreground_mask, cell_locations, method='membran
     numpy.ndarray
         Segmentation map where cells are labeled from 1 to N and background is 0
     """
-    # Convert to grayscale
+    # start here, converting to grayscale
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     
-    # Create a marker image for watershed/region growing
+    # we do create a marker image for watershed/region growing
     markers = np.zeros_like(gray, dtype=np.int32)
     
-    # Mark background as -1
+    # we mark background as -1 for preperatian.
     markers[foreground_mask == 0] = -1
     
     # Mark each cell location with a unique ID
     # Limit to a reasonable number to avoid performance issues
     max_cells = min(len(cell_locations), 500)  # Cap at 500 cells maximum
-    
-    # For better seed placement, check if we're too close to a membrane
+   
     if method == 'membrane_enhanced':
-        # Detect cell membranes (white boundaries between cells)
-        # First enhance contrast
+        # aiming to detect white membrans
+        # enhancing contrast as the first stage
         clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8, 8))
         enhanced = clahe.apply(gray)
         
@@ -74,21 +73,21 @@ def find_cell_boundaries(image, foreground_mask, cell_locations, method='membran
         This method specifically enhances the cell membranes to guide watershed segmentation,
         which should produce cell shapes more similar to the ground truth.
         """
-        # Step 1: Enhance membrane detection in the original image
+        # enhancing  membrane detection in the original image
         clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8, 8))
         enhanced = clahe.apply(gray)
         
-        # Step 2: Apply top-hat transformation to isolate bright structures (membranes)
+       
         kernel = np.ones((11, 11), np.uint8)
         tophat = cv2.morphologyEx(enhanced, cv2.MORPH_TOPHAT, kernel)
         
-        # Step 3: Apply threshold to highlight membranes
+        #  Apply threshold to highlight membranes
         _, membrane_binary = cv2.threshold(tophat, 30, 255, cv2.THRESH_BINARY)
         
-        # Step 4: Enhance membrane contrast
+        # membrane constrant improvement
         membrane_enhanced = cv2.addWeighted(enhanced, 0.7, membrane_binary, 0.3, 0)
         
-        # Step 5: Calculate gradient for watershed
+        # apply gradinet for watershed
         # Create gradients with extra weight on detected membranes
         sobelx = cv2.Sobel(membrane_enhanced, cv2.CV_64F, 1, 0, ksize=3)
         sobely = cv2.Sobel(membrane_enhanced, cv2.CV_64F, 0, 1, ksize=3)
@@ -131,12 +130,12 @@ def find_cell_boundaries(image, foreground_mask, cell_locations, method='membran
                     segmentation_map[segment_mask] = most_common_label
         except Exception as e:
             print(f"Error in membrane-enhanced segmentation: {e}")
-            # Fallback to simpler segmentation
+         
             segmentation_map = markers.copy()
             segmentation_map[segmentation_map == -1] = 0
     
     elif method == 'watershed':
-        # Standard watershed approach
+   
         sobelx = cv2.Sobel(gray, cv2.CV_64F, 1, 0, ksize=3)
         sobely = cv2.Sobel(gray, cv2.CV_64F, 0, 1, ksize=3)
         gradient_magnitude = np.sqrt(sobelx**2 + sobely**2)
@@ -149,7 +148,7 @@ def find_cell_boundaries(image, foreground_mask, cell_locations, method='membran
             segmentation_map = segmentation.watershed(gradient_magnitude, markers)
         except Exception as e:
             print(f"Error in watershed segmentation: {e}")
-            # Fallback to simpler segmentation
+          
             segmentation_map = markers.copy()
             segmentation_map[segmentation_map == -1] = 0
     
@@ -166,8 +165,7 @@ def find_cell_boundaries(image, foreground_mask, cell_locations, method='membran
             segmentation_map = markers.copy()
             segmentation_map[segmentation_map == -1] = 0
     
-    # Final post-processing
-    
+   
     # Set background to 0 (watershed uses -1 for background)
     segmentation_map[segmentation_map == -1] = 0
     
@@ -177,7 +175,7 @@ def find_cell_boundaries(image, foreground_mask, cell_locations, method='membran
             continue
         # Count pixels with this label
         size = np.sum(segmentation_map == label)
-        if size < 50:  # Minimum size threshold (increased from 30)
+        if size < 50:  # Minimum size threshold (increased from 30) for better results
             segmentation_map[segmentation_map == label] = 0
     
     return segmentation_map
@@ -190,17 +188,17 @@ def draw_circle(y, x, radius, shape):
     # The distance from the center
     distance = xx**2 + yy**2
     
-    # Select points within radius
+    # we are having the points within radius
     mask = distance <= radius**2
     
-    # Get coordinates in the mask
+    # coordinates in the mask
     cy, cx = np.where(mask)
     
-    # Shift to center at (y, x)
+
     cy = cy + y - radius
     cx = cx + x - radius
     
-    # Clip to ensure within image boundaries
+    # clip to ensure within image boundaries
     valid = (cy >= 0) & (cy < shape[0]) & (cx >= 0) & (cx < shape[1])
     
     return cy[valid], cx[valid]
@@ -233,7 +231,7 @@ def evaluate_cell_boundaries(image_path, mask_path, cell_locations_path,
     dict
         Dictionary with evaluation metrics
     """
-    # Load data
+
     image = cv2.imread(image_path)
     foreground_mask = np.loadtxt(mask_path, dtype=np.int32)
     gold_cells = np.loadtxt(cells_path, dtype=np.int32)
@@ -251,7 +249,7 @@ def evaluate_cell_boundaries(image_path, mask_path, cell_locations_path,
             # Handle single row (reshape to correct format)
             cell_locations = cell_locations.reshape(1, -1)
             if cell_locations.shape[1] != 2:
-                # Invalid format, regenerate
+               
                 print("Invalid cell locations format. Generating new locations.")
                 from src.part2_locations import find_cell_locations
                 cell_locations, _ = find_cell_locations(image, foreground_mask, validation=True)
@@ -262,20 +260,20 @@ def evaluate_cell_boundaries(image_path, mask_path, cell_locations_path,
         from src.part2_locations import find_cell_locations
         cell_locations, _ = find_cell_locations(image, foreground_mask, validation=True)
     
-    # Print shape of cell_locations for debugging
+    # we debug here
     print(f"Cell locations shape: {cell_locations.shape}")
     print(f"Number of cell locations: {len(cell_locations)}")
     
-    # Find cell boundaries
+    # here we find cell boundaries
     segmentation_map = find_cell_boundaries(
         image, foreground_mask, cell_locations, 
         method=method
     )
     
-    # Save segmentation map
+
     save_result(segmentation_map, output_path)
     
-    # Calculate metrics for different thresholds
+    # calculate metrics for configs
     thresholds = [0.5, 0.75, 0.9]
     metrics = {}
     
@@ -292,7 +290,6 @@ def evaluate_cell_boundaries(image_path, mask_path, cell_locations_path,
     
     return metrics
 
-# This allows running the script directly for testing
 if __name__ == "__main__":
     # Example usage
     image_path = "data/images/im1.jpg"
@@ -302,7 +299,7 @@ if __name__ == "__main__":
     output_path = "results/part3/im1_segmentation.txt"
     vis_path = "results/part3/im1_visualization.png"
     
-    # Use the improved membrane-enhanced segmentation
+    # improved membrane-enhanced segmentation
     print("Testing membrane_enhanced segmentation method...")
     result = evaluate_cell_boundaries(
         image_path, mask_path, cell_locations_path, cells_path, 
@@ -310,7 +307,7 @@ if __name__ == "__main__":
         method='membrane_enhanced'
     )
     
-    # Print results for each threshold
+
     for threshold in [0.5, 0.75, 0.9]:
         print(f"  Threshold {threshold}:")
         print(f"    Dice index: {result[f'dice_{threshold}']:.3f}")
